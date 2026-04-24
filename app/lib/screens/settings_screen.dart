@@ -1,27 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/sources.dart';
 import '../models/user_prefs.dart';
 import '../providers.dart';
-
-const _allSources = [
-  'bloomberg',
-  'reuters',
-  'ft',
-  'cnbc',
-  'yahoo',
-  'marketwatch',
-  'nikkei_asia',
-];
-const _sourceNames = {
-  'bloomberg': 'Bloomberg',
-  'reuters': 'Reuters',
-  'ft': 'Financial Times',
-  'cnbc': 'CNBC',
-  'yahoo': 'Yahoo Finance',
-  'marketwatch': 'MarketWatch',
-  'nikkei_asia': 'Nikkei Asia',
-};
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -139,9 +121,9 @@ class _BodyState extends ConsumerState<_Body> {
         _Section(
           title: _isKo ? '소스 선택' : 'Sources',
           children: [
-            for (final s in _allSources)
+            for (final s in kAllSources)
               CheckboxListTile(
-                title: Text(_sourceNames[s]!),
+                title: Text(kSourceDisplayNames[s]!),
                 value: _local.enabledSources.contains(s),
                 onChanged: _saving
                     ? null

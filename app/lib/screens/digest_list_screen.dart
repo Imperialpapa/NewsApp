@@ -5,17 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/article.dart';
+import '../models/sources.dart';
 import '../providers.dart';
 import '../widgets/article_card.dart';
-
-const _sourceDisplayNames = {
-  'bloomberg': 'Bloomberg',
-  'reuters': 'Reuters',
-  'ft': 'Financial Times',
-  'cnbc': 'CNBC',
-  'marketwatch': 'MarketWatch',
-  'yahoo': 'Yahoo Finance',
-};
 
 class DigestListScreen extends ConsumerWidget {
   const DigestListScreen({super.key});
@@ -115,7 +107,7 @@ class _SourceHeader extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            _sourceDisplayNames[sourceKey] ?? sourceKey,
+            kSourceDisplayNames[sourceKey] ?? sourceKey,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.primary,

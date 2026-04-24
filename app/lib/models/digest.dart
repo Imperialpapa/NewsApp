@@ -1,14 +1,5 @@
 import 'article.dart';
-
-/// Display order for source sections — reputation/relevance weighted.
-const kSourceDisplayOrder = [
-  'bloomberg',
-  'reuters',
-  'ft',
-  'cnbc',
-  'marketwatch',
-  'yahoo',
-];
+import 'sources.dart';
 
 class Digest {
   final String id;
@@ -45,7 +36,7 @@ class Digest {
   }
 
   /// Groups articles by source, filtered by `enabledSources` if provided,
-  /// ordered per `kSourceDisplayOrder`. Articles within each source are
+  /// ordered per `kAllSources`. Articles within each source are
   /// ordered by rank ascending (1 = most prominent).
   List<MapEntry<String, List<Article>>> groupedBySource({
     List<String>? enabledSources,
@@ -61,7 +52,7 @@ class Digest {
       list.sort((a, b) => a.rank.compareTo(b.rank));
     }
     return [
-      for (final key in kSourceDisplayOrder)
+      for (final key in kAllSources)
         if (map[key] != null && map[key]!.isNotEmpty)
           MapEntry(key, map[key]!),
     ];
