@@ -50,7 +50,9 @@ SOURCES: tuple[Source, ...] = (
     Source(
         key="yahoo",
         name="Yahoo Finance",
-        rss_url="https://finance.yahoo.com/news/rssindex",
+        # Yahoo's native feed updates slowly (entries often >24h old).
+        # Google News proxy gives us fresh yahoo.com articles, same pattern as Reuters.
+        rss_url="https://news.google.com/rss/search?q=site:finance.yahoo.com+when:1d&hl=en-US&gl=US&ceid=US:en",
         summarize=True,
         show_snippet=False,
     ),
