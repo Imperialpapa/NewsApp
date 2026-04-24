@@ -38,7 +38,7 @@ class OpenAICompatSummarizer(Summarizer):
             payload = resp.json()
         text = payload["choices"][0]["message"]["content"]
         data = json.loads(_strip_fences(text))
-        return Summary(summary_en=data["summary_en"], summary_ko=data["summary_ko"])
+        return Summary(summary_en=data["summary_en"])
 
 
 def _strip_fences(text: str) -> str:
