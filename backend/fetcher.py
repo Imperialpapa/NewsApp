@@ -162,15 +162,25 @@ def top_stories(top_n: int) -> list[Cluster]:
 
 
 def per_source_top(per_source_limit: int = 5) -> dict[str, list[Article]]:
-    """For each source, return the N most recent articles (deduped by URL).
+    """For each source, return the N most recent articles, deduped within a
+    source by URL and across sources by shared-token overlap.
+
+    Cross-source dedup: if a candidate article's significant-token set
+    overlaps with any already-selected article (from any source) by
+    >= MIN_SHARED_TOKENS, it is skipped. This prevents the same story
+    (e.g. a major earnings report covered by multiple outlets) from filling
+    multiple slots. The freshest coverage wins — articles are processed in
+    descending publish order.
 
     Returns at most `per_source_limit` per source; may return fewer if the
-    source's feed had less than N items in the MAX_AGE_HOURS window. Sources
-    are guaranteed to be keys in the result dict even if empty.
+    source's feed had less than N distinct-story items in the MAX_AGE_HOURS
+    window. Sources are guaranteed to be keys in the result dict even if empty.
     """
     articles = fetch_all()
     buckets: dict[str, list[Article]] = {s.key: [] for s in SOURCES}
     seen_urls: dict[str, set[str]] = {s.key: set() for s in SOURCES}
+    selected_tokens: list[set[str]] = []
+    skipped_dupe = 0
     # Sort newest first so .append + cap = top-N by recency.
     articles.sort(key=lambda a: a.published_at, reverse=True)
     for art in articles:
@@ -179,6 +189,16 @@ def per_source_top(per_source_limit: int = 5) -> dict[str, list[Article]]:
             continue
         if len(buckets[key]) >= per_source_limit:
             continue
+        art_tokens = art.tokens
+        if any(
+            len(art_tokens & prev) >= MIN_SHARED_TOKENS
+            for prev in selected_tokens
+        ):
+            skipped_dupe += 1
+            continue
         buckets[key].append(art)
         seen_urls[key].add(art.url)
+        selected_tokens.append(art_tokens)
+    if skipped_dupe:
+        log.info("Cross-source dedup: skipped %d duplicate stories", skipped_dupe)
     return buckets
