@@ -6,20 +6,55 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/article.dart';
 import '../models/sources.dart';
+import '../models/user_prefs.dart';
 import '../providers.dart';
 import '../widgets/article_card.dart';
 
-class DigestListScreen extends ConsumerWidget {
+class DigestListScreen extends ConsumerStatefulWidget {
   const DigestListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DigestListScreen> createState() => _DigestListScreenState();
+}
+
+class _DigestListScreenState extends ConsumerState<DigestListScreen> {
+  // Local optimistic copy. Seeded from prefs on first load so UI responds
+  // instantly to taps; server save happens in the background.
+  Set<String>? _collapsed;
+
+  Future<void> _toggle(String sourceKey, UserPrefs currentPrefs) async {
+    final current = _collapsed ?? currentPrefs.collapsedSources.toSet();
+    final next = Set<String>.from(current);
+    if (!next.remove(sourceKey)) next.add(sourceKey);
+    setState(() => _collapsed = next);
+    final updated = currentPrefs.copyWith(collapsedSources: next.toList());
+    try {
+      await ref.read(supabaseServiceProvider).savePrefs(updated);
+      ref.invalidate(userPrefsProvider);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _collapsed = current); // revert on failure
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString()),
+        duration: const Duration(seconds: 2),
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final digestAsync = ref.watch(digestProvider);
     final prefsAsync = ref.watch(userPrefsProvider);
     final language =
         prefsAsync.maybeWhen(data: (p) => p.language, orElse: () => 'ko');
     final enabledSources =
         prefsAsync.maybeWhen(data: (p) => p.enabledSources, orElse: () => null);
+    final prefs = prefsAsync.asData?.value;
+    // Seed local state from server once; after that, local state is the
+    // source of truth so in-flight saves don't thrash the UI.
+    _collapsed ??= prefs?.collapsedSources.toSet();
+    final collapsedSet =
+        _collapsed ?? prefs?.collapsedSources.toSet() ?? const <String>{};
     final isKo = language == 'ko';
 
     return Scaffold(
@@ -62,22 +97,16 @@ class DigestListScreen extends ConsumerWidget {
                         ),
                   ),
                 ),
-                for (final entry in grouped) ...[
-                  _SourceHeader(
+                for (final entry in grouped)
+                  _CollapsibleSourceSection(
                     sourceKey: entry.key,
-                    count: entry.value.length,
+                    articles: entry.value,
+                    language: language,
+                    collapsed: collapsedSet.contains(entry.key),
+                    onToggle:
+                        prefs == null ? null : () => _toggle(entry.key, prefs),
+                    onOpenArticle: _openArticle,
                   ),
-                  for (final article in entry.value)
-                    Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                      child: ArticleCard(
-                        article: article,
-                        language: language,
-                        onTap: () => _openArticle(article.originalUrl),
-                      ),
-                    ),
-                ],
               ],
             );
           },
@@ -94,39 +123,114 @@ class DigestListScreen extends ConsumerWidget {
   }
 }
 
+class _CollapsibleSourceSection extends StatelessWidget {
+  final String sourceKey;
+  final List<Article> articles;
+  final String language;
+  final bool collapsed;
+  final VoidCallback? onToggle;
+  final Future<void> Function(String url) onOpenArticle;
+
+  const _CollapsibleSourceSection({
+    required this.sourceKey,
+    required this.articles,
+    required this.language,
+    required this.collapsed,
+    required this.onToggle,
+    required this.onOpenArticle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _SourceHeader(
+          sourceKey: sourceKey,
+          count: articles.length,
+          collapsed: collapsed,
+          onTap: onToggle,
+        ),
+        ClipRect(
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: collapsed
+                ? const SizedBox(width: double.infinity)
+                : Column(
+                    children: [
+                      for (final article in articles)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                          child: ArticleCard(
+                            article: article,
+                            language: language,
+                            onTap: () => onOpenArticle(article.originalUrl),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SourceHeader extends StatelessWidget {
   final String sourceKey;
   final int count;
-  const _SourceHeader({required this.sourceKey, required this.count});
+  final bool collapsed;
+  final VoidCallback? onTap;
+
+  const _SourceHeader({
+    required this.sourceKey,
+    required this.count,
+    required this.collapsed,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          Text(
-            kSourceDisplayNames[sourceKey] ?? sourceKey,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            AnimatedRotation(
+              turns: collapsed ? -0.25 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.expand_more,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '· $count',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.outline,
+            const SizedBox(width: 4),
+            Text(
+              kSourceDisplayNames[sourceKey] ?? sourceKey,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
+              ),
             ),
-          ),
-          const Expanded(child: SizedBox()),
-          Container(
-            height: 1,
-            width: 40,
-            color: theme.colorScheme.outlineVariant,
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              '· $count',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const Expanded(child: SizedBox()),
+            Container(
+              height: 1,
+              width: 40,
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -185,7 +289,3 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
-
-// Silence unused-import warning when Article isn't referenced directly.
-// ignore: unused_element
-void _keepArticleImport() => Article;

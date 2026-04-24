@@ -4,6 +4,7 @@ class UserPrefs {
   final String language;   // 'ko' | 'en'
   final bool enabled;
   final List<String> enabledSources;
+  final List<String> collapsedSources;
 
   const UserPrefs({
     required this.userId,
@@ -11,6 +12,7 @@ class UserPrefs {
     required this.language,
     required this.enabled,
     required this.enabledSources,
+    required this.collapsedSources,
   });
 
   factory UserPrefs.fromJson(Map<String, dynamic> json) => UserPrefs(
@@ -20,6 +22,9 @@ class UserPrefs {
         enabled: json['enabled'] as bool,
         enabledSources:
             (json['enabled_sources'] as List<dynamic>).cast<String>(),
+        collapsedSources:
+            (json['collapsed_sources'] as List<dynamic>? ?? const [])
+                .cast<String>(),
       );
 
   UserPrefs copyWith({
@@ -27,6 +32,7 @@ class UserPrefs {
     String? language,
     bool? enabled,
     List<String>? enabledSources,
+    List<String>? collapsedSources,
   }) =>
       UserPrefs(
         userId: userId,
@@ -34,6 +40,7 @@ class UserPrefs {
         language: language ?? this.language,
         enabled: enabled ?? this.enabled,
         enabledSources: enabledSources ?? this.enabledSources,
+        collapsedSources: collapsedSources ?? this.collapsedSources,
       );
 
   Map<String, dynamic> toUpdatePayload() => {
@@ -41,6 +48,7 @@ class UserPrefs {
         'language': language,
         'enabled': enabled,
         'enabled_sources': enabledSources,
+        'collapsed_sources': collapsedSources,
       };
 
   /// Parse "HH:MM:SS" to hours + minutes.
