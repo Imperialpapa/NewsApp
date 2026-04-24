@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+
+# Flutter
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/ios/Pods/
+app/android/.gradle/
+app/android/local.properties
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+app/android/key.properties
+app/android/app/upload-keystore.jks
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+serviceAccountKey.json
+
+# Logs
+*.log
+
+# Local notes / scratch
+NewsApp.txt
+.claude/settings.local.json

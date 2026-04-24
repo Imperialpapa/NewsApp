@@ -1,0 +1,45 @@
+name: news_app
+description: "Morning financial news digest for Korean finance professionals."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Supabase: auth + DB
+  supabase_flutter: ^2.11.0
+
+  # State management
+  flutter_riverpod: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Open original article URLs in browser / in-app webview
+  url_launcher: ^6.3.1
+
+  # Local notifications (FCM comes later)
+  flutter_local_notifications: ^19.0.0
+  timezone: ^0.10.0
+
+  # Env config at runtime
+  flutter_dotenv: ^5.2.1
+
+  # Date/time formatting
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
