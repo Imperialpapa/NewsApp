@@ -63,6 +63,16 @@ SOURCES: tuple[Source, ...] = (
         summarize=True,
         show_snippet=False,
     ),
+    Source(
+        key="nikkei_asia",
+        name="Nikkei Asia",
+        # Official feed (asia.nikkei.com/rss/feed/nar) omits publish dates,
+        # which breaks our freshness filter. Use Google News proxy (same
+        # pattern as Reuters and Yahoo) for properly dated entries.
+        rss_url="https://news.google.com/rss/search?q=site:asia.nikkei.com+when:1d&hl=en-US&gl=US&ceid=US:en",
+        summarize=True,
+        show_snippet=False,
+    ),
 )
 
 SOURCES_BY_KEY = {s.key: s for s in SOURCES}

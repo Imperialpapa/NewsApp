@@ -4,7 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_prefs.dart';
 import '../providers.dart';
 
-const _allSources = ['bloomberg', 'reuters', 'ft', 'cnbc', 'yahoo', 'marketwatch'];
+const _allSources = [
+  'bloomberg',
+  'reuters',
+  'ft',
+  'cnbc',
+  'yahoo',
+  'marketwatch',
+  'nikkei_asia',
+];
 const _sourceNames = {
   'bloomberg': 'Bloomberg',
   'reuters': 'Reuters',
@@ -12,6 +20,7 @@ const _sourceNames = {
   'cnbc': 'CNBC',
   'yahoo': 'Yahoo Finance',
   'marketwatch': 'MarketWatch',
+  'nikkei_asia': 'Nikkei Asia',
 };
 
 class SettingsScreen extends ConsumerWidget {
