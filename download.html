@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewsApp — 글로벌 금융 뉴스 다이제스트</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --fg: #0f172a;
+    --muted: #64748b;
+    --accent: #1d4ed8;
+    --accent-soft: #dbeafe;
+    --card: #ffffff;
+    --border: #e2e8f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1120;
+      --fg: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a8a;
+      --card: #111827;
+      --border: #1f2937;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+      "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+    min-height: 100vh;
+    padding: 48px 20px 80px;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 520px; width: 100%; }
+  header { margin-bottom: 36px; }
+  h1 {
+    font-size: 30px;
+    margin: 0 0 6px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .tagline {
+    color: var(--muted);
+    margin: 0;
+    font-size: 15px;
+  }
+  .lead {
+    font-size: 15.5px;
+    color: var(--fg);
+    margin: 0 0 28px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+  .chip {
+    padding: 4px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.15s ease;
+    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+  }
+  .cta:hover { opacity: 0.95; }
+  .cta:active { transform: translateY(1px); }
+  .cta svg { width: 18px; height: 18px; }
+  .meta {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin: 10px 0 32px;
+  }
+  section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  section h2 {
+    font-size: 13px;
+    margin: 0 0 10px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  ol {
+    padding-left: 22px;
+    margin: 0;
+  }
+  ol li {
+    margin-bottom: 6px;
+    font-size: 14.5px;
+  }
+  ol li:last-child { margin-bottom: 0; }
+  .note {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 14px 0 0;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 40px;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>NewsApp<span class="badge">BETA</span></h1>
+    <p class="tagline">Morning digest for global finance professionals</p>
+  </header>
+
+  <p class="lead">
+    Bloomberg, Reuters, FT 등 7개 주요 금융 매체에서 매일 아침 8시(KST)에
+    최신 뉴스를 자동 수집하고 AI가 영어로 간결하게 요약합니다. 소스별로
+    정리된 카드 리스트에서 필요한 것만 골라볼 수 있어, 통근 시간 5분이면
+    글로벌 시장 동향을 파악할 수 있습니다.
+  </p>
+
+  <div class="chips">
+    <span class="chip">Bloomberg</span>
+    <span class="chip">Reuters</span>
+    <span class="chip">Financial Times</span>
+    <span class="chip">CNBC</span>
+    <span class="chip">MarketWatch</span>
+    <span class="chip">Yahoo Finance</span>
+    <span class="chip">Nikkei Asia</span>
+  </div>
+
+  <a class="cta" href="https://github.com/Imperialpapa/NewsApp/releases/download/v0.1.0-beta/app-debug.apk">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Android APK 다운로드
+  </a>
+  <p class="meta">Android 5.0 이상 · 디버그 빌드 · v0.1.0-beta (약 167MB)</p>
+
+  <section>
+    <h2>설치 방법</h2>
+    <ol>
+      <li>위 버튼을 탭하여 APK 파일 다운로드</li>
+      <li>다운로드 완료 알림을 탭해 설치 화면으로 이동</li>
+      <li>"이 출처의 앱 설치 허용" 권한 요청 시 <strong>허용</strong></li>
+      <li>"Play 프로텍트에서 확인되지 않음" 경고는 <strong>무시 후 설치</strong></li>
+    </ol>
+    <p class="note">
+      베타 테스트용 디버그 빌드이므로 실제 배포 버전보다 앱 크기가 크고
+      배터리 소모가 조금 더 많을 수 있습니다.
+    </p>
+  </section>
+</div>
+</body>
+</html>
