@@ -2,11 +2,19 @@ import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'models/byok_settings.dart';
 import 'models/digest.dart';
 import 'models/user_prefs.dart';
+import 'services/byok_storage.dart';
 import 'services/supabase_service.dart';
 
 final supabaseServiceProvider = Provider((_) => SupabaseService());
+
+final byokStorageProvider = Provider((_) => ByokStorage());
+
+final byokSettingsProvider = FutureProvider<ByokSettings>(
+  (ref) => ref.read(byokStorageProvider).load(),
+);
 
 final digestProvider = FutureProvider<Digest?>((ref) async {
   final svc = ref.read(supabaseServiceProvider);

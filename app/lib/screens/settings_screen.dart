@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/byok_settings.dart';
 import '../models/sources.dart';
 import '../models/user_prefs.dart';
 import '../providers.dart';
+import '../services/byok_summarizer.dart';
 import '../widgets/bottom_banner.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -146,6 +148,10 @@ class _BodyState extends ConsumerState<_Body> {
               ),
           ],
         ),
+        _Section(
+          title: _isKo ? '프리미엄 요약 (선택)' : 'Premium Summaries (Optional)',
+          children: [_ByokTile(isKo: _isKo)],
+        ),
       ],
     );
   }
@@ -186,4 +192,183 @@ class _Section extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ByokTile extends ConsumerStatefulWidget {
+  final bool isKo;
+  const _ByokTile({required this.isKo});
+  @override
+  ConsumerState<_ByokTile> createState() => _ByokTileState();
+}
+
+class _ByokTileState extends ConsumerState<_ByokTile> {
+  ByokProvider _provider = ByokProvider.none;
+  final _keyCtrl = TextEditingController();
+  final _modelCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _busy = false;
+  bool _seeded = false;
+
+  @override
+  void dispose() {
+    _keyCtrl.dispose();
+    _modelCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _isKo => widget.isKo;
+
+  void _seed(ByokSettings s) {
+    if (_seeded) return;
+    _provider = s.provider;
+    _keyCtrl.text = s.apiKey;
+    _modelCtrl.text = s.modelOverride ?? '';
+    _seeded = true;
+  }
+
+  Future<void> _save({required bool validateFirst}) async {
+    final settings = ByokSettings(
+      provider: _provider,
+      apiKey: _keyCtrl.text.trim(),
+      modelOverride:
+          _modelCtrl.text.trim().isEmpty ? null : _modelCtrl.text.trim(),
+    );
+    if (settings.provider != ByokProvider.none && settings.apiKey.isEmpty) {
+      _toast(_isKo ? 'API 키를 입력하세요' : 'Enter an API key');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      if (validateFirst && settings.isActive) {
+        final s = ByokSummarizer(settings);
+        try {
+          await s.validateKey();
+        } finally {
+          s.close();
+        }
+      }
+      await ref.read(byokStorageProvider).save(settings);
+      ref.invalidate(byokSettingsProvider);
+      _toast(_isKo ? '저장됨' : 'Saved');
+    } catch (e) {
+      _toast(_isKo ? '실패: $e' : 'Failed: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _toast(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(byokSettingsProvider);
+    return async.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => ListTile(title: Text(e.toString())),
+      data: (loaded) {
+        _seed(loaded);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _isKo
+                    ? '본인의 API 키로 더 높은 품질의 요약을 받습니다. 키는 휴대폰 보안 저장소에만 저장됩니다.'
+                    : 'Use your own API key for higher-quality summaries. '
+                        'Keys stay in device secure storage only.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<ByokProvider>(
+                initialValue: _provider,
+                decoration: InputDecoration(
+                  labelText: _isKo ? '제공자' : 'Provider',
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: [
+                  for (final p in ByokProvider.values)
+                    DropdownMenuItem(value: p, child: Text(p.displayName)),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (p) => setState(() => _provider = p ?? ByokProvider.none),
+              ),
+              if (_provider != ByokProvider.none) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _keyCtrl,
+                  obscureText: _obscure,
+                  enabled: !_busy,
+                  decoration: InputDecoration(
+                    labelText: 'API key',
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscure
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _modelCtrl,
+                  enabled: !_busy,
+                  decoration: InputDecoration(
+                    labelText: _isKo ? '모델 (선택)' : 'Model (optional)',
+                    hintText: _defaultModelHint(_provider),
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  if (_provider != ByokProvider.none) ...[
+                    OutlinedButton(
+                      onPressed: _busy ? null : () => _save(validateFirst: true),
+                      child: Text(_isKo ? '테스트 & 저장' : 'Test & Save'),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  TextButton(
+                    onPressed: _busy ? null : () => _save(validateFirst: false),
+                    child: Text(_isKo ? '저장만' : 'Save only'),
+                  ),
+                  const Spacer(),
+                  if (_busy)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  static String _defaultModelHint(ByokProvider p) => switch (p) {
+        ByokProvider.openai => 'gpt-4o-mini',
+        ByokProvider.gemini => 'gemini-2.0-flash',
+        ByokProvider.claude => 'claude-haiku-4-5',
+        ByokProvider.none => '',
+      };
 }
