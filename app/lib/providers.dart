@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'models/digest.dart';
@@ -15,5 +17,14 @@ final digestProvider = FutureProvider<Digest?>((ref) async {
 final userPrefsProvider = FutureProvider<UserPrefs>((ref) async {
   final svc = ref.read(supabaseServiceProvider);
   await svc.ensureSignedIn();
-  return svc.loadPrefs();
+  final prefs = await svc.loadPrefs();
+  if (prefs.languageExplicit) return prefs;
+  // First launch (or pre-existing user pre-dating this feature): pick the
+  // summary language from the device locale once, then mark as explicit so
+  // future settings-screen choices stick.
+  final deviceLanguage =
+      PlatformDispatcher.instance.locale.languageCode == 'ko' ? 'ko' : 'en';
+  return svc.savePrefs(
+    prefs.copyWith(language: deviceLanguage, languageExplicit: true),
+  );
 });

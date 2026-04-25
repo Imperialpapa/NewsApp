@@ -100,7 +100,10 @@ class _BodyState extends ConsumerState<_Body> {
               groupValue: _local.language,
               onChanged: (String? v) {
                 if (_saving || v == null) return;
-                setState(() => _local = _local.copyWith(language: v));
+                setState(() => _local = _local.copyWith(
+                      language: v,
+                      languageExplicit: true,
+                    ));
                 _save();
               },
               child: const Column(
