@@ -4,6 +4,50 @@
 
 ---
 
+## 🚀 2026-04-25 — v1.0 Play Store 출시 완료
+
+### 최종 식별자 (변경 불가)
+- **Android 패키지명:** `com.nolgaemi.todaysmarket`
+- **앱 표시 이름:** "Today's Market"
+- **AAB 파일:** `app/build/app/outputs/bundle/release/app-release.aab` (47.6 MB, 빌드 필요 시 재생성)
+- **Upload keystore:** `app/android/app/upload-keystore.jks` (gitignored)
+  - 별칭: `NewsApp`
+  - 인증서 유효: 2026-04-25 → 2053-09-10
+  - **분실 시 이 패키지로 영구 업데이트 불가** → 외부 안전 위치에 백업 필수
+- **Key 비번 저장:** `app/android/key.properties` (gitignored)
+
+### Play Store / AdMob 등록
+- AdMob App ID: `ca-app-pub-3130573171479694~5919844034` (AndroidManifest meta-data)
+- AdMob Banner ID: `ca-app-pub-3130573171479694/5153871905` (`lib/services/ads_config.dart`)
+- 둘 다 `com.nolgaemi.todaysmarket` 패키지로 등록 → invalid traffic 위험 없음
+- debug 빌드는 항상 Google 테스트 ID 자동 사용 (`kReleaseMode` 분기)
+- ⚠️ **test device 미등록 (Galaxy S24)** → release APK 본인 폰에서 테스트 시 광고 절대 탭 금지 (self-click → 계정 정지)
+
+### 다음 업데이트 시 절차 (체크리스트)
+1. `app/pubspec.yaml`의 `version: X.Y.Z+N` 에서 `+N` 정수를 무조건 +1 (Play 중복 차단)
+2. 코드 변경 → commit → push
+3. `cd D:/dev/NewsApp/app && flutter clean && flutter build appbundle --release`
+4. Play Console → Production → "새 버전 만들기" → AAB 업로드 → release notes → 검토 → 롤아웃
+5. 빌드 실패 시 점검: `android/app/upload-keystore.jks` 존재 여부, `android/key.properties` 비번
+
+### Play Store 산출물 (재사용 가능)
+- 앱 아이콘 원본: `icon_512.png` (repo 루트) / `app/assets/icon/icon_512.png` (빌드용)
+- Feature graphic 1024×500: `feature_graphic_1024x500.png`
+- 태블릿 스크린샷 1600×2560: `tablet_screenshot_1600x2560.png`
+- 폰 스크린샷: `image1.jpg` (디지스트 + 불렛), `image2.jpg` (설정 + BYOK)
+- 출시 후 더 필요하면 `python` + Pillow로 동일 패턴 재생성 (브랜드: peach #FFC9A0 그라데이션 + 차트 라인)
+
+### v1.1 후보 (출시 후 검토)
+- **🇰🇷 한국어 요약 BYOK 전용 활성화** — Llama 한자 오염 회피 (BYOK provider는 한국어 깔끔). prompt에 KO bullet 추가만 하면 됨.
+- **(d) Anthropic Claude를 chain 3순위 fallback으로** — 크레딧 이슈 해결 후 `LLM_PROVIDER=groq,gemini,anthropic`
+- **AdMob test device 등록** — 5분 작업으로 self-click 사고 영구 방지
+- **About 화면 보강** — 출시 v1엔 들어갔으나, 오픈소스 라이선스/버전/지원 이메일 등 보강 여지
+- **iOS 포팅** — Phase 5, 별도 개발자 등록 필요 ($99/yr)
+- **푸시 알림 (FCM)** — Phase 2c 미착수
+- **Telegram bot fan-out** — Phase 3 미착수
+
+---
+
 ## 📌 2026-04-25 추가 작업 — AdMob + BYOK + 출시 준비
 
 ### AdMob 하단 배너
