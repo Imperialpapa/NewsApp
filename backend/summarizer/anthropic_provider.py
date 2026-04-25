@@ -17,7 +17,7 @@ class AnthropicSummarizer(Summarizer):
         )
         response = self._client.messages.create(
             model=self._model,
-            max_tokens=600,
+            max_tokens=1000,
             system=[
                 {
                     "type": "text",
@@ -29,7 +29,10 @@ class AnthropicSummarizer(Summarizer):
         )
         text = next(b.text for b in response.content if b.type == "text")
         data = _parse_json(text)
-        return Summary(summary_en=data["summary_en"])
+        return Summary(
+            summary_en=data["summary_en"],
+            summary_ko=data.get("summary_ko"),
+        )
 
 
 def _parse_json(text: str) -> dict:

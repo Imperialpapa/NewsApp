@@ -29,7 +29,7 @@ class OpenAICompatSummarizer(Summarizer):
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_content},
             ],
-            "max_tokens": 600,
+            "max_tokens": 1000,
             "response_format": {"type": "json_object"},
         }
         with httpx.Client(timeout=60.0) as client:
@@ -38,7 +38,10 @@ class OpenAICompatSummarizer(Summarizer):
             payload = resp.json()
         text = payload["choices"][0]["message"]["content"]
         data = json.loads(_strip_fences(text))
-        return Summary(summary_en=data["summary_en"])
+        return Summary(
+            summary_en=data["summary_en"],
+            summary_ko=data.get("summary_ko"),
+        )
 
 
 def _strip_fences(text: str) -> str:
