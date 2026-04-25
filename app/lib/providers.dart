@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'models/byok_settings.dart';
 import 'models/digest.dart';
+import 'models/provider_models.dart';
 import 'models/user_prefs.dart';
 import 'services/byok_storage.dart';
 import 'services/byok_summary_notifier.dart';
+import 'services/remote_models_service.dart';
 import 'services/supabase_service.dart';
 
 final supabaseServiceProvider = Provider((_) => SupabaseService());
@@ -19,6 +21,14 @@ final byokSettingsProvider = FutureProvider<ByokSettings>(
 
 final byokSummariesProvider =
     ChangeNotifierProvider<ByokSummaries>((_) => ByokSummaries());
+
+final remoteModelsServiceProvider =
+    Provider((_) => RemoteModelsService());
+
+final providerModelsProvider =
+    FutureProvider<Map<ByokProvider, List<ModelOption>>>(
+  (ref) => ref.read(remoteModelsServiceProvider).load(),
+);
 
 final digestProvider = FutureProvider<Digest?>((ref) async {
   final svc = ref.read(supabaseServiceProvider);

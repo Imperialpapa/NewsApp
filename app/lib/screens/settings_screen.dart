@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/byok_settings.dart';
+import '../models/provider_models.dart';
 import '../models/sources.dart';
 import '../models/user_prefs.dart';
 import '../providers.dart';
@@ -201,8 +202,14 @@ class _ByokTile extends ConsumerStatefulWidget {
   ConsumerState<_ByokTile> createState() => _ByokTileState();
 }
 
+// Sentinel value used in the model dropdown to mean "let the user type a
+// model name in the text field below". Real model IDs are never the empty
+// string so this is a safe distinguisher.
+const String _kCustomModelSentinel = '__custom__';
+
 class _ByokTileState extends ConsumerState<_ByokTile> {
   ByokProvider _provider = ByokProvider.none;
+  String? _modelDropdownValue; // a model id, or _kCustomModelSentinel
   final _keyCtrl = TextEditingController();
   final _modelCtrl = TextEditingController();
   bool _obscure = true;
@@ -218,12 +225,63 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
 
   bool get _isKo => widget.isKo;
 
-  void _seed(ByokSettings s) {
+  void _seed(ByokSettings s, Map<ByokProvider, List<ModelOption>> models) {
     if (_seeded) return;
     _provider = s.provider;
     _keyCtrl.text = s.apiKey;
     _modelCtrl.text = s.modelOverride ?? '';
+    _modelDropdownValue = _resolveDropdownValue(s.modelOverride, models);
     _seeded = true;
+  }
+
+  /// Match the saved override against the curated list. Empty/null →
+  /// recommended (balanced) model. Unknown id → Custom.
+  String _resolveDropdownValue(
+    String? saved,
+    Map<ByokProvider, List<ModelOption>> models,
+  ) {
+    final list = models[_provider] ?? const [];
+    if (saved == null || saved.isEmpty) {
+      final recommended = list.firstWhere(
+        (m) => m.isRecommended,
+        orElse: () => list.isNotEmpty ? list.first : _placeholder,
+      );
+      return recommended.id;
+    }
+    final match = list.where((m) => m.id == saved).toList();
+    return match.isNotEmpty ? match.first.id : _kCustomModelSentinel;
+  }
+
+  static const _placeholder =
+      ModelOption(id: '', displayName: '', tier: ModelTier.balanced);
+
+  void _onProviderChanged(
+    ByokProvider next,
+    Map<ByokProvider, List<ModelOption>> models,
+  ) {
+    setState(() {
+      _provider = next;
+      if (next == ByokProvider.none) {
+        _modelDropdownValue = null;
+        _modelCtrl.text = '';
+      } else {
+        _modelDropdownValue = _resolveDropdownValue(null, models);
+        _modelCtrl.text =
+            _modelDropdownValue == _kCustomModelSentinel ? '' : _modelDropdownValue!;
+      }
+    });
+  }
+
+  void _onModelDropdownChanged(String? value) {
+    if (value == null) return;
+    setState(() {
+      _modelDropdownValue = value;
+      if (value != _kCustomModelSentinel) {
+        _modelCtrl.text = value;
+      } else {
+        _modelCtrl.text = '';
+      }
+    });
   }
 
   Future<void> _save({required bool validateFirst}) async {
@@ -264,17 +322,27 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
     );
   }
 
+  String _tierLabel(ModelTier t) => switch (t) {
+        ModelTier.premium => _isKo ? '고품질' : 'Premium',
+        ModelTier.balanced => _isKo ? '균형 · 추천' : 'Balanced · Recommended',
+        ModelTier.economy => _isKo ? '저비용' : 'Economy',
+      };
+
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(byokSettingsProvider);
-    return async.when(
+    final settingsAsync = ref.watch(byokSettingsProvider);
+    final modelsAsync = ref.watch(providerModelsProvider);
+    return settingsAsync.when(
       loading: () => const Padding(
         padding: EdgeInsets.all(16),
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => ListTile(title: Text(e.toString())),
       data: (loaded) {
-        _seed(loaded);
+        final models =
+            modelsAsync.asData?.value ?? BakedInModels.byProvider;
+        _seed(loaded, models);
+        final providerModels = models[_provider] ?? const <ModelOption>[];
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Column(
@@ -303,7 +371,8 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
                 ],
                 onChanged: _busy
                     ? null
-                    : (p) => setState(() => _provider = p ?? ByokProvider.none),
+                    : (p) =>
+                        _onProviderChanged(p ?? ByokProvider.none, models),
               ),
               if (_provider != ByokProvider.none) ...[
                 const SizedBox(height: 12),
@@ -324,29 +393,58 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _modelCtrl,
-                  enabled: !_busy,
+                DropdownButtonFormField<String>(
+                  initialValue: _modelDropdownValue,
+                  isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: _isKo ? '모델 (선택)' : 'Model (optional)',
-                    hintText: _defaultModelHint(_provider),
+                    labelText: _isKo ? '모델' : 'Model',
                     border: const OutlineInputBorder(),
                     isDense: true,
                   ),
+                  items: [
+                    for (final m in providerModels)
+                      DropdownMenuItem(
+                        value: m.id,
+                        child: Text(
+                          '${m.displayName}  (${_tierLabel(m.tier)})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    DropdownMenuItem(
+                      value: _kCustomModelSentinel,
+                      child: Text(_isKo ? '사용자 지정…' : 'Custom…'),
+                    ),
+                  ],
+                  onChanged: _busy ? null : _onModelDropdownChanged,
                 ),
+                if (_modelDropdownValue == _kCustomModelSentinel) ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _modelCtrl,
+                    enabled: !_busy,
+                    decoration: InputDecoration(
+                      labelText: _isKo ? '모델 ID 직접 입력' : 'Custom model ID',
+                      hintText: 'e.g. gpt-4.1, claude-sonnet-4-7-future',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ],
               ],
               const SizedBox(height: 12),
               Row(
                 children: [
                   if (_provider != ByokProvider.none) ...[
                     OutlinedButton(
-                      onPressed: _busy ? null : () => _save(validateFirst: true),
+                      onPressed:
+                          _busy ? null : () => _save(validateFirst: true),
                       child: Text(_isKo ? '테스트 & 저장' : 'Test & Save'),
                     ),
                     const SizedBox(width: 8),
                   ],
                   TextButton(
-                    onPressed: _busy ? null : () => _save(validateFirst: false),
+                    onPressed:
+                        _busy ? null : () => _save(validateFirst: false),
                     child: Text(_isKo ? '저장만' : 'Save only'),
                   ),
                   const Spacer(),
@@ -364,11 +462,4 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
       },
     );
   }
-
-  static String _defaultModelHint(ByokProvider p) => switch (p) {
-        ByokProvider.openai => 'gpt-4o-mini',
-        ByokProvider.gemini => 'gemini-2.5-flash',
-        ByokProvider.claude => 'claude-haiku-4-5',
-        ByokProvider.none => '',
-      };
 }

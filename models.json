@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "updated_at": "2026-04-25",
+  "_comment": "Curated BYOK model list per provider. App fetches this at runtime (cached 24h) so new models can be rolled out without an app update — bump updated_at and commit. tier values: premium | balanced | economy. The balanced entry is treated as the recommended default.",
+  "providers": {
+    "openai": [
+      {"id": "gpt-5", "name": "GPT-5", "tier": "premium"},
+      {"id": "gpt-5-mini", "name": "GPT-5 mini", "tier": "balanced"},
+      {"id": "gpt-4o-mini", "name": "GPT-4o mini", "tier": "economy"}
+    ],
+    "gemini": [
+      {"id": "gemini-2.5-pro", "name": "Gemini 2.5 Pro", "tier": "premium"},
+      {"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash", "tier": "balanced"},
+      {"id": "gemini-2.5-flash-lite", "name": "Gemini 2.5 Flash Lite", "tier": "economy"}
+    ],
+    "claude": [
+      {"id": "claude-opus-4-7", "name": "Claude Opus 4.7", "tier": "premium"},
+      {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "tier": "balanced"},
+      {"id": "claude-haiku-4-5", "name": "Claude Haiku 4.5", "tier": "economy"}
+    ]
+  }
+}
