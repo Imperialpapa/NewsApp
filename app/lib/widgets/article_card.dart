@@ -111,13 +111,31 @@ class _BulletList extends StatelessWidget {
 
   const _BulletList({required this.text, required this.theme});
 
+  /// Split the LLM summary into bullet items.
+  ///
+  /// Prefers newline-separated bullets (the prompt asks for `\n` joins).
+  /// When the model collapses everything into a single paragraph anyway —
+  /// Llama-via-Groq does this ~50% of the time — fall back to splitting
+  /// by sentence boundary so the user still sees bullets instead of one
+  /// long blob with a single `•`.
+  static List<String> _toBullets(String text) {
+    final byNewline = text
+        .split('\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (byNewline.length > 1) return byNewline;
+    final bySentence = text
+        .split(RegExp(r'(?<=[.!?])\s+'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    return bySentence.isEmpty ? [text.trim()] : bySentence;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bullets = text
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    final bullets = _toBullets(text);
     final style = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
       height: 1.4,
