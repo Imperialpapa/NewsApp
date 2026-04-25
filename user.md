@@ -11,9 +11,10 @@
   - `backend/summarizer/base.py` SYSTEM_PROMPT가 정확히 3개 bullet을 `\n`으로 join하여 요청
   - 앱은 `_BulletList` 위젯으로 split 후 `•` prefix 렌더 (`app/lib/widgets/article_card.dart`)
   - DB 스키마 변경 없음 (`summary_en` TEXT 그대로)
-- **EN + KO 동시 생성**
+- **EN + KO 동시 생성** (코드 추가했으나 KO 부분은 보류 — 아래 "향후 개선 방향" 참고)
   - 한 번의 LLM 호출로 영어 + 한국어 bullet 둘 다 받아 `summary_en`, `summary_ko`에 저장
   - `max_tokens` 600 → 1000 (한국어 분량 확보)
+  - **현재 상태:** prompt를 EN-only로 환원 (Llama 한국어 한자 오염 79%). DB `summary_ko` 컬럼/앱 fallback 로직은 유지 — KO 재개 시 코드 변경 최소
 - **device locale 자동 매칭** (migration `0007_user_prefs_language_explicit.sql` 필요)
   - 첫 실행 시 한국어 디바이스 → `language='ko'`, 그 외 → `'en'` 자동 세팅
   - 새 컬럼 `language_explicit boolean` — 한 번 자동 매칭/수동 설정되면 다시 덮어쓰지 않음
@@ -32,6 +33,13 @@
 - 남은 1건 패턴: Groq가 특정 기사에 **400 Bad Request** 반환 (rate limit 아님 — content/payload 이슈로 추정)
 
 ### 향후 개선 방향 (보류)
+- **🇰🇷 한국어 요약 복원** — 현재 EN-only로 운영 중 (2026-04-25 보류)
+  - **보류 사유:** Llama-via-Groq의 한국어 출력이 79% 비율로 한자(简化字) 오염 (`影响`, `地政`, `不确定`, `投资`, `开`, `医` 등). 빈약한 한국어 학습 데이터 + 한중 토큰 혼동으로 추정. chain validation으로 reject + Gemini fallback 시도해봤으나 Gemini의 15 RPM 한도가 부하 못 받아 더 큰 손실(26% 성공률) 발생.
+  - **재개 옵션:**
+    1. `LLM_PROVIDER=gemini,groq` — Gemini를 primary로. 무료 유지, 한국어 품질 압도적으로 좋음, 영어도 양호. Throttle 4초 필요 (Gemini 15 RPM 한도). **가장 단순한 길.**
+    2. Anthropic Claude Haiku 도입 — 유료(일 ~$0.01)지만 한국어/영어 둘 다 최고 품질 + 안정. 수익 검증 후 권장.
+    3. KO 전용 보조 호출 — EN은 Groq, KO는 Gemini로 분리. 호출 수 2배.
+  - **재개 시 코드 변경 범위:** `backend/summarizer/base.py` SYSTEM_PROMPT만 다시 EN+KO로. `chain.py` 의 KO validation도 재추가. DB/앱 코드는 그대로 (`summary_ko` 컬럼, device-locale 자동매칭, `language_explicit` 모두 유지됨).
 - **(d) Anthropic Claude Haiku를 chain 최후 fallback으로 추가** — `LLM_PROVIDER=groq,gemini,anthropic`
   - 유료지만 비용 매우 작음 (일 약 $0.01, 26 articles × 200 in + 600 out 토큰 기준)
   - RPM/RPD 한도 매우 넉넉 → Groq 400 + Gemini 429 동시 발생해도 Claude가 받음 → 100% 근접
