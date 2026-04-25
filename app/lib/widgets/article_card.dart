@@ -65,12 +65,15 @@ class ArticleCard extends StatelessWidget {
               Text(article.headline, style: theme.textTheme.titleMedium),
               if (body != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  body,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                if (isSnippetFallback)
+                  Text(
+                    body,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                else
+                  _BulletList(text: body, theme: theme),
                 if (isSnippetFallback) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -98,6 +101,44 @@ class ArticleCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BulletList extends StatelessWidget {
+  final String text;
+  final ThemeData theme;
+
+  const _BulletList({required this.text, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final bullets = text
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    final style = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+      height: 1.4,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < bullets.length; i++) ...[
+          if (i > 0) const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2, right: 8),
+                child: Text('•', style: style),
+              ),
+              Expanded(child: Text(bullets[i], style: style)),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
