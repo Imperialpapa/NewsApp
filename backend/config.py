@@ -17,4 +17,7 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GLM_API_KEY = os.getenv("GLM_API_KEY")
 GLM_MODEL = os.getenv("GLM_MODEL", "glm-4-flash")
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
 TOP_N = int(os.getenv("TOP_N", "5"))

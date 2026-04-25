@@ -28,6 +28,10 @@ def _build_one(provider: str) -> Summarizer:
     if provider == "glm":
         from .glm_provider import GLMSummarizer
         return GLMSummarizer()
+    if provider == "gemini":
+        from .gemini_provider import GeminiSummarizer
+        return GeminiSummarizer()
     raise ValueError(
-        f"Unknown LLM provider {provider!r}. Expected: anthropic | groq | glm"
+        f"Unknown LLM provider {provider!r}. "
+        "Expected: anthropic | groq | glm | gemini"
     )
