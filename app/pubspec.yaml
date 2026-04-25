@@ -1,5 +1,5 @@
 name: news_app
-description: "Morning financial news digest for Korean finance professionals."
+description: "Today's Market — morning financial news digest for global finance professionals."
 publish_to: 'none'
 
 version: 1.0.0+1
