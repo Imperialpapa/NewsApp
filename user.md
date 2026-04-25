@@ -4,6 +4,39 @@
 
 ---
 
+## 📌 2026-04-25 추가 작업 — AdMob + BYOK + 출시 준비
+
+### AdMob 하단 배너
+- `google_mobile_ads ^8.0` 통합. `_BottomBanner` 위젯을 디지스트/설정 화면 모두에 `bottomNavigationBar`로 배치.
+- `AdsConfig.bannerAdUnitId`가 `kReleaseMode`로 분기: debug → Google 공식 테스트 ID, release → 실제 ID `ca-app-pub-3130573171479694/5153871905`.
+- AndroidManifest에 App ID `ca-app-pub-3130573171479694~5919844034` 메타데이터 추가.
+- ⚠️ test device 등록 안 됨 → release APK를 본인 폰에 깔면 실제 광고 노출됨. **본인이 절대 탭 금지** (self-click → AdMob 계정 정지 위험).
+
+### BYOK (Bring Your Own Key) — opt-in 프리미엄 요약
+- 설정 화면에 "프리미엄 요약 (선택)" 섹션. provider(OpenAI/Gemini/Claude) + API 키 + 모델 override 입력.
+- 키는 `flutter_secure_storage` (Android Keystore / iOS Keychain) — 디바이스 밖으로 안 나감.
+- "Test & Save" 버튼이 sample 호출로 키 검증 후 저장. "Save only"는 검증 없이 저장.
+- 디지스트 로드 시 BYOK 활성이면 백그라운드로 모든 기사를 사용자 LLM에 재요약 (1.5초 spacing). 결과는 `shared_preferences`에 article+provider+model 키로 캐시.
+- `ArticleCard`에서 BYOK 요약 우선 표시 + `✨` 아이콘으로 BYOK 출처 마킹. 실패 시 서버 요약으로 silent fallback.
+- 광고는 그대로 유지 (BYOK 사용자도 무료 사용자 흐름과 동일).
+
+### 향후 개선 방향에 추가
+- **🇰🇷 한국어 요약 복원**: BYOK provider(Claude/GPT-4o)를 사용하면 한국어 품질 자동으로 회복됨 — 서버 측 KO 복원 작업의 우회 경로. v1.1에 prompt에 KO bullet 추가 가능.
+- **AdMob test device 등록**: release 출시 전 5분 작업으로 self-click 사고 0%로 만들기.
+- **개인정보처리방침**: AdMob/BYOK 데이터 수집 항목 명시 + GitHub Pages 정적 호스팅. Play Console Data Safety 섹션과 연동 필수.
+
+### Play Store 출시 흐름
+- Play Console 가입돼 있고 2023년 11월 이전 계정 → closed testing 14일 의무 면제, 바로 production 가능.
+- 출시 직전 체크리스트:
+  1. test device 등록 후 release APK로 본인 폰 검증
+  2. privacy policy URL 확보 + Play Console 입력
+  3. Data Safety 섹션 신고 (광고 ID, BYOK 키 저장 위치 등)
+  4. 앱 아이콘/스플래시/스토어 스크린샷 준비
+  5. release keystore 서명 (`android/key.properties`)
+  6. `flutter build appbundle --release` → AAB 업로드
+
+---
+
 ## 📌 2026-04-25 업데이트 — 요약 품질/다국어/안정성
 
 ### 적용된 변경
