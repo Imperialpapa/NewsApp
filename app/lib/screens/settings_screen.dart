@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/byok_settings.dart';
 import '../models/provider_models.dart';
@@ -284,6 +285,14 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
     });
   }
 
+  Future<void> _openApiKeyConsole(String url) async {
+    final uri = Uri.parse(url);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      _toast(_isKo ? '브라우저를 열 수 없습니다' : "Couldn't open browser");
+    }
+  }
+
   Future<void> _save({required bool validateFirst}) async {
     final settings = ByokSettings(
       provider: _provider,
@@ -375,7 +384,27 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
                         _onProviderChanged(p ?? ByokProvider.none, models),
               ),
               if (_provider != ByokProvider.none) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
+                if (_provider.apiKeysUrl != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => _openApiKeyConsole(_provider.apiKeysUrl!),
+                      icon: const Icon(Icons.key_outlined, size: 18),
+                      label: Text(
+                        _isKo
+                            ? '${_provider.displayName} 키 발급 받기'
+                            : 'Get a ${_provider.displayName} API key',
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 4),
                 TextField(
                   controller: _keyCtrl,
                   obscureText: _obscure,

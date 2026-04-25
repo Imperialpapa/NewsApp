@@ -5,14 +5,30 @@
 /// the user's own OpenAI / Gemini / Claude key for higher quality.
 /// Default state (provider=none) keeps the centralized digest path.
 enum ByokProvider {
-  none('none', 'Off'),
-  openai('openai', 'OpenAI'),
-  gemini('gemini', 'Google Gemini'),
-  claude('claude', 'Anthropic Claude');
+  none('none', 'Off', null),
+  openai(
+    'openai',
+    'OpenAI',
+    'https://platform.openai.com/api-keys',
+  ),
+  gemini(
+    'gemini',
+    'Google Gemini',
+    'https://aistudio.google.com/apikey',
+  ),
+  claude(
+    'claude',
+    'Anthropic Claude',
+    'https://console.anthropic.com/settings/keys',
+  );
 
-  const ByokProvider(this.id, this.displayName);
+  const ByokProvider(this.id, this.displayName, this.apiKeysUrl);
   final String id;
   final String displayName;
+
+  /// Console page where the user can mint an API key for this provider.
+  /// Null only for [ByokProvider.none].
+  final String? apiKeysUrl;
 
   static ByokProvider fromId(String? id) =>
       values.firstWhere((p) => p.id == id, orElse: () => ByokProvider.none);
