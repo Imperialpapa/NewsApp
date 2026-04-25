@@ -115,7 +115,8 @@ class _ProviderConfig {
           ),
         ByokProvider.gemini => const _ProviderConfig(
             'https://generativelanguage.googleapis.com/v1beta/openai',
-            'gemini-2.0-flash',
+            // gemini-2.0-flash was retired for new API keys in early 2026.
+            'gemini-2.5-flash',
           ),
         ByokProvider.claude => const _ProviderConfig(
             // Anthropic ships an OpenAI-compat shim that accepts the same

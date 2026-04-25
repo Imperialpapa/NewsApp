@@ -367,7 +367,7 @@ class _ByokTileState extends ConsumerState<_ByokTile> {
 
   static String _defaultModelHint(ByokProvider p) => switch (p) {
         ByokProvider.openai => 'gpt-4o-mini',
-        ByokProvider.gemini => 'gemini-2.0-flash',
+        ByokProvider.gemini => 'gemini-2.5-flash',
         ByokProvider.claude => 'claude-haiku-4-5',
         ByokProvider.none => '',
       };
