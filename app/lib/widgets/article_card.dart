@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/article.dart';
+import '../providers.dart';
 
-class ArticleCard extends StatelessWidget {
+class ArticleCard extends ConsumerWidget {
   final Article article;
   final String language;
   final VoidCallback onTap;
@@ -15,11 +17,14 @@ class ArticleCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final summary = article.summaryIn(language);
+    final byok = ref.watch(byokSummariesProvider);
+    final byokSummary = byok.summaryFor(article.id);
+    final summary = byokSummary ?? article.summaryIn(language);
     final body = summary ?? (article.hasSnippet ? article.snippet : null);
     final isSnippetFallback = summary == null && article.hasSnippet;
+    final isByok = byokSummary != null;
     final headlineOnly = body == null;
 
     return Card(
@@ -58,6 +63,11 @@ class ArticleCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Icon(Icons.link,
                         size: 14, color: theme.colorScheme.outline),
+                  ],
+                  if (isByok) ...[
+                    const SizedBox(width: 8),
+                    Icon(Icons.auto_awesome,
+                        size: 14, color: theme.colorScheme.primary),
                   ],
                 ],
               ),

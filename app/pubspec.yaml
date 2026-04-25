@@ -36,6 +36,7 @@ dependencies:
   google_mobile_ads: ^8.0.0
   flutter_secure_storage: ^10.0.0
   http: ^1.6.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

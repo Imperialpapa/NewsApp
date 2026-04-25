@@ -46,6 +46,7 @@ class _DigestListScreenState extends ConsumerState<DigestListScreen> {
   Widget build(BuildContext context) {
     final digestAsync = ref.watch(digestProvider);
     final prefsAsync = ref.watch(userPrefsProvider);
+    final byokSettingsAsync = ref.watch(byokSettingsProvider);
     final language =
         prefsAsync.maybeWhen(data: (p) => p.language, orElse: () => 'ko');
     final enabledSources =
@@ -57,6 +58,19 @@ class _DigestListScreenState extends ConsumerState<DigestListScreen> {
     final collapsedSet =
         _collapsed ?? prefs?.collapsedSources.toSet() ?? const <String>{};
     final isKo = language == 'ko';
+
+    // Kick BYOK re-summarization in the background once both digest and
+    // settings are loaded. The notifier coalesces concurrent calls.
+    final digest = digestAsync.asData?.value;
+    final byokSettings = byokSettingsAsync.asData?.value;
+    if (digest != null && byokSettings != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(byokSummariesProvider).refresh(
+              settings: byokSettings,
+              articles: digest.articles,
+            );
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
