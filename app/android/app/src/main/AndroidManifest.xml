@@ -31,6 +31,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- AdMob app ID for kr.co.wkac.news_app. Per AdMob policy this
+             is per-app and not a secret (visible in network traffic). The
+             ad-unit ID used at runtime is switched to a Google test ID in
+             debug builds via lib/services/ads_config.dart. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3130573171479694~5919844034"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

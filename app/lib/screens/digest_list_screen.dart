@@ -9,6 +9,7 @@ import '../models/sources.dart';
 import '../models/user_prefs.dart';
 import '../providers.dart';
 import '../widgets/article_card.dart';
+import '../widgets/bottom_banner.dart';
 
 class DigestListScreen extends ConsumerStatefulWidget {
   const DigestListScreen({super.key});
@@ -67,6 +68,7 @@ class _DigestListScreenState extends ConsumerState<DigestListScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const BottomBanner(),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(digestProvider),
         child: digestAsync.when(
