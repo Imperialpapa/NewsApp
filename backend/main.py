@@ -8,12 +8,18 @@ from __future__ import annotations
 
 import logging
 import sys
+import time
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from . import config, fetcher, storage
 from .sources import SOURCES
 from .summarizer import get_summarizer
+
+# Spacing between LLM calls (seconds). Free-tier providers have tight
+# RPM limits (~15-30) and burst us into 429s when we fire 13+ requests
+# back-to-back. 2s keeps us at ~30 RPM, comfortable for both Groq and Gemini.
+SUMMARIZE_THROTTLE_SEC = 2.0
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,6 +60,7 @@ def run() -> int:
                     log.warning(
                         "Summarize failed for %s #%d: %s", src.key, rank, e
                     )
+                time.sleep(SUMMARIZE_THROTTLE_SEC)
             snippet = art.snippet.strip() if src.show_snippet and art.snippet else None
             rows.append(storage.ArticleRow(
                 source=src.key,
