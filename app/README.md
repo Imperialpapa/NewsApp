@@ -64,4 +64,4 @@ First build takes 3–5 minutes. Hot reload (`r` in terminal) after that.
 
 ## Package ID
 
-`kr.co.wkac.news_app` — set via `android/app/build.gradle.kts` (`applicationId`). Changing after Play Store publish is painful.
+`com.nolgaemi.todaysmarket` — set via `android/app/build.gradle.kts` (`applicationId` and `namespace`). Matches the Play Console-issued package name. Changing after Play Store publish is painful.

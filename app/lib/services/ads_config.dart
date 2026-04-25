@@ -13,7 +13,7 @@ class AdsConfig {
   static const String _testBannerAndroid =
       'ca-app-pub-3940256099942544/6300978111';
 
-  // Production banner unit for kr.co.wkac.news_app.
+  // Production banner unit for com.nolgaemi.todaysmarket.
   static const String _prodBannerAndroid =
       'ca-app-pub-3130573171479694/5153871905';
 

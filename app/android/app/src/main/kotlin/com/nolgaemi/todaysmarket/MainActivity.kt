@@ -1,4 +1,4 @@
-package kr.co.wkac.news_app
+package com.nolgaemi.todaysmarket
 
 import io.flutter.embedding.android.FlutterActivity
 
