@@ -20,22 +20,13 @@ FALLBACK_SLEEP_SEC = 1.0
 def _quality_reject(s: Summary) -> str | None:
     """Return reason string if output is malformed, else None.
 
-    Catches two failure modes observed from Llama-via-Groq:
-    1. Bullets collapsed into a single paragraph (no newlines).
-    2. Korean output contaminated with simplified-Chinese ideographs
-       (e.g. 地政학적, 不确定성, 影响). Modern Korean financial writing
-       essentially never uses Hanja, so any CJK ideograph is a red flag.
+    Catches Llama-via-Groq's tendency to collapse the requested 3 bullets
+    into a single paragraph. KO contamination checks were removed when
+    Korean generation was paused — see user.md for re-enable plan.
     """
     en_lines = [ln for ln in s.summary_en.split("\n") if ln.strip()]
     if len(en_lines) < 2:
         return f"EN has {len(en_lines)} line(s), expected ~3 bullets"
-    if s.summary_ko:
-        ko_lines = [ln for ln in s.summary_ko.split("\n") if ln.strip()]
-        if len(ko_lines) < 2:
-            return f"KO has {len(ko_lines)} line(s), expected ~3 bullets"
-        for ch in s.summary_ko:
-            if "一" <= ch <= "鿿":
-                return f"KO contains CJK ideograph {ch!r} (Chinese contamination)"
     return None
 
 
