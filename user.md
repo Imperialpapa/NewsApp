@@ -4,6 +4,43 @@
 
 ---
 
+## 📌 2026-04-25 업데이트 — 요약 품질/다국어/안정성
+
+### 적용된 변경
+- **요약 포맷: 평문 → 3개 불렛포인트**
+  - `backend/summarizer/base.py` SYSTEM_PROMPT가 정확히 3개 bullet을 `\n`으로 join하여 요청
+  - 앱은 `_BulletList` 위젯으로 split 후 `•` prefix 렌더 (`app/lib/widgets/article_card.dart`)
+  - DB 스키마 변경 없음 (`summary_en` TEXT 그대로)
+- **EN + KO 동시 생성**
+  - 한 번의 LLM 호출로 영어 + 한국어 bullet 둘 다 받아 `summary_en`, `summary_ko`에 저장
+  - `max_tokens` 600 → 1000 (한국어 분량 확보)
+- **device locale 자동 매칭** (migration `0007_user_prefs_language_explicit.sql` 필요)
+  - 첫 실행 시 한국어 디바이스 → `language='ko'`, 그 외 → `'en'` 자동 세팅
+  - 새 컬럼 `language_explicit boolean` — 한 번 자동 매칭/수동 설정되면 다시 덮어쓰지 않음
+- **LLM provider fallback chain**
+  - `LLM_PROVIDER` 콤마 구분 지원 (`groq,gemini`). 첫 provider 실패 시 다음으로 자동 fallback
+  - `backend/summarizer/chain.py` 새 추가
+  - Gemini provider 추가 (`backend/summarizer/gemini_provider.py`, default `gemini-2.0-flash`, OpenAI 호환 endpoint)
+  - 새 GitHub Secret: `GEMINI_API_KEY`
+- **rate-limit burst 방지**
+  - 요청 간 2초 throttle (`backend/main.py`)
+  - chain 내 fallback 호출 전 1초 cooldown (`chain.py`)
+
+### 결과
+- 워크플로우 실패율: **5건 → 1건** (19개 요약 대상 기준 95%+ 성공)
+- 총 실행 시간: 40초 → 80초 (10분 timeout 내)
+- 남은 1건 패턴: Groq가 특정 기사에 **400 Bad Request** 반환 (rate limit 아님 — content/payload 이슈로 추정)
+
+### 향후 개선 방향 (보류)
+- **(d) Anthropic Claude Haiku를 chain 최후 fallback으로 추가** — `LLM_PROVIDER=groq,gemini,anthropic`
+  - 유료지만 비용 매우 작음 (일 약 $0.01, 26 articles × 200 in + 600 out 토큰 기준)
+  - RPM/RPD 한도 매우 넉넉 → Groq 400 + Gemini 429 동시 발생해도 Claude가 받음 → 100% 근접
+  - 전제: Anthropic 크레딧 이슈(아래 🟡 섹션) 해결
+- **Groq 400 원인 분석** — 자주 실패하는 기사(MarketWatch, Yahoo의 일부) 패턴 파악 후 snippet sanitization 고려
+- **Telegram bot 채널** — 동일 digest 파이프라인을 텔레그램으로도 fan-out (Phase 3, 미착수)
+
+---
+
 ## 🟢 완료
 
 ### Phase 1 — 백엔드 파이프라인
@@ -104,9 +141,10 @@
 
 ## 🔑 계정 상태
 
-- ✅ Supabase 프로젝트 `sefkaalksvaiihlcjfvu` — 스키마 적용됨
-- ✅ Groq API key — 작동 확인
-- ⚠️ Anthropic API key — 키는 있지만 크레딧 이슈로 401/400
+- ✅ Supabase 프로젝트 `sefkaalksvaiihlcjfvu` — 스키마 적용됨 (마지막 migration `0007_user_prefs_language_explicit.sql`까지)
+- ✅ Groq API key — 작동 확인 (chain 1순위)
+- ✅ Gemini API key — 작동 확인 (chain 2순위, fallback)
+- ⚠️ Anthropic API key — 키는 있지만 크레딧 이슈로 401/400 (해결 시 chain 3순위 추가 예정)
 - 🟡 Telegram Bot — 아직 생성 안 함 (Phase 3)
 - 🟡 Firebase — 아직 생성 안 함 (Phase 2c)
 - 🟡 Google AdMob — 아직 가입 안 함 (Phase 2d)
